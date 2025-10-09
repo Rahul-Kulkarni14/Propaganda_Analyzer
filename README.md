@@ -1,5 +1,3 @@
-
-
 # 🗣️ Propaganda Analyzer – Speech Manipulation Detection System
 
 An intelligent, modular NLP system that detects propaganda and manipulative techniques in speech. The system uses DistilBERT-based models to classify text fragments as either manipulated or genuine, and further identifies the specific manipulative techniques applied in each fragment.
@@ -21,12 +19,17 @@ The system is designed to analyze speeches of arbitrary length and highlight spe
 ## 🚀 Features
 
 * 📝 **Speech fragmentation**: Automatically splits speeches into sentences or word-based fragments.
+
 * ⚠️ **Binary classification**: Detects presence of manipulation.
+
 * 🎯 **Multiclass classification**: Detects 15 different manipulative techniques:
 
   * Appeal_to_Authority, Repetition, Doubt, Name_Calling, Appeal_to_Fear, Exaggeration, Loaded_Language, Bandwagon, Stereotyping, Flag_Waving, Causal_Oversimplification, Appeal_to_Pity, Red_Herring, Card_Stacking, Testimonial
+
 * 🖥️ **GPU support**: Uses PyTorch with CUDA for faster inference if available.
+
 * 📊 **Detailed output**: Highlights which fragment contains which manipulation technique.
+
 * 🔧 **Modular codebase**: Separate scripts for model training (`main.py`) and inference (`speech_analyzer.py`).
 
 ---
@@ -44,21 +47,27 @@ The system is designed to analyze speeches of arbitrary length and highlight spe
 
 ## 📦 Installation
 
-1. Clone the repository:
+1. **Clone the repository**:
 
 ```bash
 git clone <your-github-repo-url>
 cd Propaganda_Analyzer
 ```
 
-2. Install required Python packages:
+2. **Install Git LFS** (for large model files):
+
+```bash
+git lfs install
+git lfs pull
+```
+
+> **Note:** This ensures that model files (`.safetensors`) over 100 MB are properly downloaded. All `.safetensors` files in this repo are tracked with Git LFS.
+
+3. **Install required Python packages**:
 
 ```bash
 pip install -r requirements.txt
 ```
-
-> **Note:** Ensure PyTorch is installed with GPU support if available.
-> OneDNN warnings can be suppressed by setting environment variables as included in `speech_analyzer.py`.
 
 ---
 
