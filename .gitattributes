@@ -1,0 +1,4 @@
+*.safetensors filter=lfs diff=lfs merge=lfs -text
+transformer_binary_model/model.safetensors filter=lfs diff=lfs merge=lfs -text
+transformer_multiclass_model/model.safetensors filter=lfs diff=lfs merge=lfs -text
+transformer_model/model.safetensors filter=lfs diff=lfs merge=lfs -text
