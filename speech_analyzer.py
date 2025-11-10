@@ -1,5 +1,5 @@
 # =============================
-# speech_analyzer.py (Sentence-based Fragments, Fixed)
+# speech_analyzer.py - Speech Propaganda/Manipulation Analyzer
 # =============================
 import os
 # =============================
@@ -115,9 +115,22 @@ def analyze_speech(speech_text):
         multi_model.eval()
         with torch.no_grad():
             outputs_mc = multi_model(input_ids, attention_mask=attention_mask)
-            mc_pred = torch.argmax(outputs_mc.logits, dim=1).item()
+            logits = outputs_mc.logits[0]  # Get logits for this fragment
 
-        technique_name = technique_map.get(mc_pred, f"Technique_{mc_pred}")
+            # Sort predictions by confidence (highest first)
+            sorted_preds = torch.argsort(logits, descending=True)
+
+            # Get the most confident label
+            primary_label = sorted_preds[0].item()
+            primary_name = technique_map.get(primary_label, f"Technique_{primary_label}")
+
+            # If top label is "Name_Calling", pick the next most confident one
+            if primary_name == "Name_Calling" and len(sorted_preds) > 1:
+                secondary_label = sorted_preds[1].item()
+                technique_name = technique_map.get(secondary_label, f"Technique_{secondary_label}")
+            else:
+                technique_name = primary_name
+
         detected_fragments.append((frag, technique_name))
 
     # =============================
