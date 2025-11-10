@@ -1,12 +1,13 @@
-# 🗣️ Propaganda Analyzer – Speech Manipulation Detection System
+
+# Propaganda Analyzer – Speech Manipulation Detection System
 
 An intelligent, modular NLP system that detects propaganda and manipulative techniques in speech. The system uses DistilBERT-based models to classify text fragments as either manipulated or genuine, and further identifies the specific manipulative techniques applied in each fragment.
 
 ---
 
-## 🔍 Overview
+## Overview
 
-Propaganda Analyzer is a hybrid text analysis framework that detects manipulative language in speeches and textual content using:
+Propaganda Analyzer is a hybrid text analysis framework that detects manipulative大发语言 in speeches and textual content using:
 
 * **Binary classification model**: Identifies whether a fragment contains manipulation.
 * **Multiclass classification model**: Identifies the type of manipulative technique, such as Bandwagon, Appeal to Fear, Name Calling, and more.
@@ -16,25 +17,25 @@ The system is designed to analyze speeches of arbitrary length and highlight spe
 
 ---
 
-## 🚀 Features
+## Features
 
-* 📝 **Speech fragmentation**: Automatically splits speeches into sentences or word-based fragments.
+* **Speech fragmentation**: Automatically splits speeches into sentences or word-based fragments.
 
-* ⚠️ **Binary classification**: Detects presence of manipulation.
+* **Binary classification**: Detects presence of manipulation.
 
-* 🎯 **Multiclass classification**: Detects 15 different manipulative techniques:
+* **Multiclass classification**: Detects 15 different manipulative techniques:
 
   * Appeal_to_Authority, Repetition, Doubt, Name_Calling, Appeal_to_Fear, Exaggeration, Loaded_Language, Bandwagon, Stereotyping, Flag_Waving, Causal_Oversimplification, Appeal_to_Pity, Red_Herring, Card_Stacking, Testimonial
 
-* 🖥️ **GPU support**: Uses PyTorch with CUDA for faster inference if available.
+* **GPU support**: Uses PyTorch with CUDA for faster inference if available.
 
-* 📊 **Detailed output**: Highlights which fragment contains which manipulation technique.
+* **Detailed output**: Highlights which fragment contains which manipulation technique.
 
-* 🔧 **Modular codebase**: Separate scripts for model training (`main.py`) and inference (`speech_analyzer.py`).
+* **Modular codebase**: Separate scripts for model training (`main.py`) and inference (`speech_analyzer.py`).
 
 ---
 
-## ⚙️ Technologies Used
+## Technologies Used
 
 | Component             | Framework / Library      | Purpose                                   |
 | --------------------- | ------------------------ | ----------------------------------------- |
@@ -45,12 +46,12 @@ The system is designed to analyze speeches of arbitrary length and highlight spe
 
 ---
 
-## 📦 Installation
+## Installation
 
 1. **Clone the repository**:
 
 ```bash
-git clone <your-github-repo-url>
+git clone https://github.com/Rahul-Kulkarni14/Propaganda_Analyzer.git
 cd Propaganda_Analyzer
 ```
 
@@ -71,9 +72,9 @@ pip install -r requirements.txt
 
 ---
 
-## 🧪 Running the System
+## Running the System
 
-### 1. Analyze a speech
+### 1. Analyze a speech (CLI)
 
 Run the main analysis script:
 
@@ -86,18 +87,46 @@ python speech_analyzer.py
 
 ### 2. Train / Evaluate Models
 
-Run your training and evaluation pipeline (if implemented in `main.py`):
+Run your training and evaluation pipeline:
 
 ```bash
 python main.py
 ```
 
 * Outputs include performance metrics such as Accuracy, Precision, Recall, F1-Score for both binary and multiclass models.
-* Optionally, you can modify epochs or dataset splits inside `main.py`.
+
+### 3. View Model Performance
+
+```bash
+python performance.py
+```
 
 ---
 
-## 🧠 Model Insights
+**Launch the full web app** with a beautiful, interactive UI:
+
+```bash
+python app.py
+```
+
+Then open: [http://127.0.0.1:5000](http://127.0.0.1:5000)
+
+### Web App Features
+
+* **Real-time analysis**: Paste any speech and see results instantly
+* **Clean, modern UI**: Built with HTML/CSS/JS (no extra frontend needed)
+* **Two powerful tools**:
+  - **Analyze Speech** → Highlights propaganda fragments with technique names
+  - **Model Performance** → Full classification report (cached after first load)
+* **CORS enabled** → Ready for deployment or frontend separation
+* **First load**: 15–50 seconds (model loading)  
+  **Subsequent use**: Lightning fast
+
+> Perfect for demos, presentations, or sharing with professors!
+
+---
+
+## Model Insights
 
 * **Binary Model**: Detects whether a speech fragment contains manipulation or not.
 * **Multiclass Model**: Detects 15 types of manipulative techniques.
@@ -105,7 +134,7 @@ python main.py
 
 ---
 
-## 📈 Evaluation Metrics
+## Evaluation Metrics
 
 The system provides:
 
@@ -115,7 +144,7 @@ The system provides:
 
 ---
 
-## 🛡️ Applications
+## Applications
 
 Propaganda Analyzer is useful for:
 
@@ -126,10 +155,11 @@ Propaganda Analyzer is useful for:
 
 ---
 
-## 📌 References
+## References
 
 * HuggingFace Transformers – [https://huggingface.co/](https://huggingface.co/)
 * PyTorch – [https://pytorch.org/](https://pytorch.org/)
 * NLTK – [https://www.nltk.org/](https://www.nltk.org/)
+* Flask – [https://flask.palletsprojects.com/](https://flask.palletsprojects.com/)
 
-
+---
