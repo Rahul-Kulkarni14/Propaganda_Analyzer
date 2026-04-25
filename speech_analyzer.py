@@ -71,6 +71,104 @@ technique_map = {
     13: "Card_Stacking",
     14: "Testimonial"
 }
+EXPLANATION_KEYWORDS = {
+    "Appeal_to_Authority": [
+        "expert", "experts", "authority", "official", "scientist", "doctor",
+        "research", "study", "proven", "according to"
+    ],
+    "Repetition": [
+        "again", "again and again", "repeat", "repeatedly", "always", "never"
+    ],
+    "Doubt": [
+        "maybe", "perhaps", "uncertain", "question", "doubt", "allegedly",
+        "supposedly", "unverified", "rumor"
+    ],
+    "Name_Calling": [
+        "traitor", "corrupt", "criminal", "liar", "enemy", "fool",
+        "coward", "radical", "extremist"
+    ],
+    "Appeal_to_Fear": [
+        "danger", "threat", "fear", "disaster", "crisis", "attack",
+        "destroy", "collapse", "unsafe", "risk"
+    ],
+    "Exaggeration": [
+        "always", "never", "everyone", "nobody", "completely", "totally",
+        "best", "worst", "massive", "huge", "unbelievable"
+    ],
+    "Loaded_Language": [
+        "evil", "brave", "hero", "traitor", "shameful", "dangerous",
+        "disgusting", "glorious", "terrible", "innocent"
+    ],
+    "Bandwagon": [
+        "everyone", "everybody", "majority", "millions", "join", "supporters",
+        "popular", "all of us", "people are saying"
+    ],
+    "Stereotyping": [
+        "all", "always", "never", "these people", "those people", "they are",
+        "their kind"
+    ],
+    "Flag_Waving": [
+        "nation", "country", "patriot", "patriotic", "flag", "freedom",
+        "homeland", "motherland", "our people"
+    ],
+    "Causal_Oversimplification": [
+        "because of", "only reason", "single cause", "caused by", "blame",
+        "responsible for", "this is why"
+    ],
+    "Appeal_to_Pity": [
+        "suffer", "suffering", "poor", "helpless", "victim", "pain",
+        "struggle", "hardship", "sympathy"
+    ],
+    "Red_Herring": [
+        "instead", "what about", "look at", "ignore", "distract", "other issue",
+        "why talk about"
+    ],
+    "Card_Stacking": [
+        "only", "just", "clearly", "undeniable", "facts show", "no evidence against",
+        "without mentioning"
+    ],
+    "Testimonial": [
+        "I believe", "I saw", "my experience", "people say", "witness",
+        "testimonial", "endorsed", "recommended"
+    ]
+}
+
+
+TECHNIQUE_EXPLANATIONS = {
+    "Appeal_to_Authority": "This fragment may rely on authority figures or expert claims to persuade the audience.",
+    "Repetition": "This fragment may use repeated wording or repeated ideas to reinforce a message.",
+    "Doubt": "This fragment may create uncertainty or suspicion without strong evidence.",
+    "Name_Calling": "This fragment may use negative labels or insults to attack a person or group.",
+    "Appeal_to_Fear": "This fragment may use fear, danger, or threat-based language to influence the audience.",
+    "Exaggeration": "This fragment may overstate or amplify claims beyond a balanced description.",
+    "Loaded_Language": "This fragment may use emotionally charged words to influence the reader.",
+    "Bandwagon": "This fragment may suggest that many people support something, encouraging others to follow.",
+    "Stereotyping": "This fragment may generalize about a group of people.",
+    "Flag_Waving": "This fragment may appeal to patriotism, national identity, or loyalty.",
+    "Causal_Oversimplification": "This fragment may present a complex issue as having one simple cause.",
+    "Appeal_to_Pity": "This fragment may use sympathy or suffering to influence the audience.",
+    "Red_Herring": "This fragment may shift attention away from the main issue.",
+    "Card_Stacking": "This fragment may present selective information while leaving out important context.",
+    "Testimonial": "This fragment may rely on personal endorsement or individual experience as persuasion."
+}
+
+
+def get_lightweight_explanation(fragment, technique):
+    fragment_lower = fragment.lower()
+    keywords = EXPLANATION_KEYWORDS.get(technique, [])
+
+    matched_cues = []
+    for keyword in keywords:
+        if keyword.lower() in fragment_lower:
+            matched_cues.append(keyword)
+
+    return {
+        "matched_cues": matched_cues[:8],
+        "explanation": TECHNIQUE_EXPLANATIONS.get(
+            technique,
+            "This fragment contains linguistic cues that may be associated with the predicted technique."
+        )
+    }
 
 # =============================
 # Section 2: Split Speech into Sentences & Merge Short Ones
@@ -179,12 +277,16 @@ def analyze_speech_with_confidence(speech_text):
 
             technique_name = technique_map.get(selected_label, f"Technique_{selected_label}")
             technique_confidence = multi_probs[selected_label].item()
+        
+        xai_result = get_lightweight_explanation(frag, technique_name)
 
         detected_fragments.append({
             "fragment": frag,
             "technique": technique_name,
             "manipulation_confidence": round(manipulation_confidence * 100, 2),
-            "technique_confidence": round(technique_confidence * 100, 2)
+            "technique_confidence": round(technique_confidence * 100, 2),
+            "matched_cues": xai_result["matched_cues"],
+            "explanation": xai_result["explanation"]
         })
 
     return detected_fragments

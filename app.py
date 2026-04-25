@@ -353,6 +353,46 @@ HTML_TEMPLATE = '''
             white-space: pre-wrap;
         }
 
+        .xai-box {
+            margin-top: 12px;
+            padding: 12px 14px;
+            background: #f3f7f9;
+            border: 1px solid #d6e1ea;
+            border-radius: 10px;
+        }
+
+        .xai-title {
+            margin: 0 0 8px;
+            font-size: 13px;
+            font-weight: 800;
+            color: #2f4a55;
+            text-transform: uppercase;
+        }
+
+        .xai-text {
+            margin: 0;
+            color: #374151;
+            font-size: 14px;
+            line-height: 1.5;
+        }
+
+        .cue-list {
+            margin-top: 8px;
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+
+        .cue-pill {
+            display: inline-block;
+            padding: 5px 9px;
+            border-radius: 999px;
+            background: #e2eef1;
+            color: #2f4a55;
+            font-size: 12px;
+            font-weight: 800;
+        }
+
         .empty-state {
             background: #ffffff;
             border: 1px solid #d6e1ea;
@@ -459,7 +499,7 @@ HTML_TEMPLATE = '''
                 <section class="result-shell">
                     <div class="result-header">
                         <h2>Results</h2>
-                        <span class="result-hint">Fragment-level predictions with confidence scores</span>
+                        <span class="result-hint">Fragment-level predictions with confidence and lightweight explanations</span>
                     </div>
                     <div id="result"><span class="placeholder">Results will appear here after analysis.</span></div>
                 </section>
@@ -599,6 +639,11 @@ HTML_TEMPLATE = '''
                 html += `<div class="empty-state">No propaganda/manipulation detected in this speech.</div>`;
             } else {
                 results.forEach((item, index) => {
+                    const cues = item.matched_cues || [];
+                    const cueHtml = cues.length
+                        ? cues.map(cue => `<span class="cue-pill">${cue}</span>`).join('')
+                        : '<span class="cue-pill">No direct keyword cue found</span>';
+
                     html += `
                         <div class="analysis-card">
                             <div class="card-top">
@@ -606,6 +651,11 @@ HTML_TEMPLATE = '''
                                 <span class="confidence">Confidence: ${item.technique_confidence}%</span>
                             </div>
                             <p class="fragment-text">${item.fragment}</p>
+                            <div class="xai-box">
+                                <p class="xai-title">Lightweight Explanation</p>
+                                <p class="xai-text">${item.explanation}</p>
+                                <div class="cue-list">${cueHtml}</div>
+                            </div>
                         </div>
                     `;
                 });
