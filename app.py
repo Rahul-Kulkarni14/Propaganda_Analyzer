@@ -257,7 +257,7 @@ HTML_TEMPLATE = '''
             padding: 20px;
             background: #f7fafb;
             color: #1f2937;
-            white-space: pre-wrap;
+            white-space: normal;
             font-family: "Segoe UI", Arial, sans-serif;
             line-height: 1.6;
             overflow-x: auto;
@@ -272,30 +272,94 @@ HTML_TEMPLATE = '''
             font-weight: 700;
         }
 
-        .no-prop {
-            color: #247c54;
-            font-weight: 800;
-        }
-
-        .yes-prop {
-            color: #b84a4a;
-            font-weight: 800;
-        }
-
-        .future-note {
-            margin-top: 14px;
+        .meta-grid {
             display: grid;
             grid-template-columns: repeat(2, minmax(0, 1fr));
             gap: 12px;
+            margin-bottom: 16px;
         }
 
-        .future-card {
-            border: 1px dashed #b9c9d6;
+        .meta-card {
+            background: #ffffff;
+            border: 1px solid #d6e1ea;
             border-radius: 10px;
             padding: 12px 14px;
-            color: #5f6f7f;
+        }
+
+        .meta-label {
+            margin: 0 0 4px;
+            color: #687789;
+            font-size: 13px;
+            font-weight: 700;
+            text-transform: uppercase;
+        }
+
+        .meta-value {
+            margin: 0;
+            color: #1f2937;
+            font-size: 15px;
+            font-weight: 700;
+        }
+
+        .translated-box {
+            background: #ffffff;
+            border: 1px solid #d6e1ea;
+            border-radius: 10px;
+            padding: 14px;
+            margin-bottom: 16px;
+            color: #1f2937;
+            white-space: pre-wrap;
+        }
+
+        .analysis-card {
+            background: #ffffff;
+            border: 1px solid #d6e1ea;
+            border-left: 5px solid #3b7c88;
+            border-radius: 10px;
+            padding: 16px;
+            margin-bottom: 14px;
+        }
+
+        .card-top {
+            display: flex;
+            justify-content: space-between;
+            gap: 12px;
+            align-items: center;
+            margin-bottom: 10px;
+            flex-wrap: wrap;
+        }
+
+        .technique-badge {
+            display: inline-block;
+            background: #edf4f6;
+            color: #2f4a55;
+            border: 1px solid #b9c9d6;
+            border-radius: 999px;
+            padding: 6px 10px;
+            font-size: 13px;
+            font-weight: 800;
+        }
+
+        .confidence {
+            color: #247c54;
             font-size: 14px;
-            background: #f3f7f9;
+            font-weight: 800;
+        }
+
+        .fragment-text {
+            margin: 0;
+            color: #1f2937;
+            line-height: 1.6;
+            white-space: pre-wrap;
+        }
+
+        .empty-state {
+            background: #ffffff;
+            border: 1px solid #d6e1ea;
+            border-radius: 10px;
+            padding: 16px;
+            color: #247c54;
+            font-weight: 800;
         }
 
         pre {
@@ -320,7 +384,7 @@ HTML_TEMPLATE = '''
             }
 
             .control-panel,
-            .future-note {
+            .meta-grid {
                 grid-template-columns: 1fr;
             }
 
@@ -395,15 +459,10 @@ HTML_TEMPLATE = '''
                 <section class="result-shell">
                     <div class="result-header">
                         <h2>Results</h2>
-                        <span class="result-hint">Confidence and explanation cards can appear here later</span>
+                        <span class="result-hint">Fragment-level predictions with confidence scores</span>
                     </div>
                     <div id="result"><span class="placeholder">Results will appear here after analysis.</span></div>
                 </section>
-
-                <div class="future-note">
-                    <div class="future-card">Future confidence scores can be shown per detected fragment.</div>
-                    <div class="future-card">Lightweight explanations can be expanded per result without clutter.</div>
-                </div>
             </div>
         </section>
     </main>
@@ -500,11 +559,59 @@ HTML_TEMPLATE = '''
             });
 
             const data = await res.json();
-            const html = data.output
-                .replace(/No propaganda/g, '<span class="no-prop">No propaganda</span>')
-                .replace(/Propaganda\\/manipulation detected/g, '<span class="yes-prop">Propaganda/manipulation detected</span>');
 
-            document.getElementById('result').innerHTML = html || '<i>No output generated.</i>';
+            if (!res.ok || data.error) {
+                document.getElementById('result').innerHTML =
+                    '<i style="color:#b84a4a">' + (data.error || 'Analysis failed.') + '</i>';
+                return;
+            }
+
+            const translation = data.translation;
+            const results = data.results || [];
+
+            let html = `
+                <div class="meta-grid">
+                    <div class="meta-card">
+                        <p class="meta-label">Detected Language</p>
+                        <p class="meta-value">${translation.detected_language_name} (${translation.detected_language})</p>
+                    </div>
+                    <div class="meta-card">
+                        <p class="meta-label">Translated To English</p>
+                        <p class="meta-value">${translation.was_translated ? 'Yes' : 'No'}</p>
+                    </div>
+                </div>
+            `;
+
+            if (translation.error) {
+                html += `<div class="translated-box"><strong>Translation Note:</strong><br>${translation.error}</div>`;
+            }
+
+            if (translation.was_translated) {
+                html += `
+                    <div class="translated-box">
+                        <strong>Translated Text</strong><br><br>
+                        ${translation.translated_text}
+                    </div>
+                `;
+            }
+
+            if (results.length === 0) {
+                html += `<div class="empty-state">No propaganda/manipulation detected in this speech.</div>`;
+            } else {
+                results.forEach((item, index) => {
+                    html += `
+                        <div class="analysis-card">
+                            <div class="card-top">
+                                <span class="technique-badge">${index + 1}. ${item.technique}</span>
+                                <span class="confidence">Confidence: ${item.technique_confidence}%</span>
+                            </div>
+                            <p class="fragment-text">${item.fragment}</p>
+                        </div>
+                    `;
+                });
+            }
+
+            document.getElementById('result').innerHTML = html;
         }
 
         async function showPerformance() {
@@ -528,8 +635,6 @@ HTML_TEMPLATE = '''
 </html>
 '''
 
-
-
 @app.route('/')
 def index():
     return render_template_string(HTML_TEMPLATE)
@@ -539,7 +644,7 @@ def analyze_api():
     data = request.get_json()
     text = data.get('text', '').strip()
     if not text:
-        return jsonify({'output': 'Please enter some text.'})
+        return jsonify({'error': 'Please enter some text.'}), 400
 
     from translation_utils import prepare_text_for_analysis
 
@@ -547,35 +652,13 @@ def analyze_api():
     analysis_text = translation_result["translated_text"]
 
     speech_analyzer = lazy_import('speech_analyzer')
-    
-    import builtins
-    real_input = builtins.input
-    builtins.input = lambda _: analysis_text
+    results = speech_analyzer.analyze_speech_with_confidence(analysis_text)
 
-    try:
-        output = capture_print_output(speech_analyzer.analyze_speech, analysis_text)
-    finally:
-        builtins.input = real_input
+    return jsonify({
+        'translation': translation_result,
+        'results': results
+    })
 
-    translation_summary = (
-        f"Detected Language: {translation_result['detected_language_name']} "
-        f"({translation_result['detected_language']})\n"
-        f"Translated to English: {'Yes' if translation_result['was_translated'] else 'No'}\n"
-    )
-
-    if translation_result["error"]:
-        translation_summary += f"Translation Note: {translation_result['error']}\n"
-
-    if translation_result["was_translated"]:
-        translation_summary += f"\nTranslated Text:\n{analysis_text}\n"
-
-    final_output = (
-        translation_summary
-        + "\nAnalysis Result:\n"
-        + (output or "No propaganda detected.")
-    )
-
-    return jsonify({'output': final_output})
 
 @app.route('/upload-document', methods=['POST'])
 def upload_document_api():

@@ -144,6 +144,51 @@ def analyze_speech(speech_text):
         for i, (frag, tech) in enumerate(detected_fragments, 1):
             print(f"{i}. [{tech}] {frag}\n")
 
+def analyze_speech_with_confidence(speech_text):
+    fragments = split_and_merge_speech(speech_text)
+    detected_fragments = []
+
+    for frag in fragments:
+        inputs = tokenizer(frag, truncation=True, padding=True, max_length=128, return_tensors="pt")
+        input_ids = inputs["input_ids"].to(device)
+        attention_mask = inputs["attention_mask"].to(device)
+
+        binary_model.eval()
+        with torch.no_grad():
+            binary_outputs = binary_model(input_ids, attention_mask=attention_mask)
+            binary_probs = torch.softmax(binary_outputs.logits, dim=1)
+            binary_pred = torch.argmax(binary_probs, dim=1).item()
+            manipulation_confidence = binary_probs[0][binary_pred].item()
+
+        if binary_pred == 0:
+            continue
+
+        multi_model.eval()
+        with torch.no_grad():
+            multi_outputs = multi_model(input_ids, attention_mask=attention_mask)
+            multi_probs = torch.softmax(multi_outputs.logits, dim=1)[0]
+            sorted_preds = torch.argsort(multi_probs, descending=True)
+
+            primary_label = sorted_preds[0].item()
+            primary_name = technique_map.get(primary_label, f"Technique_{primary_label}")
+
+            if primary_name == "Name_Calling" and len(sorted_preds) > 1:
+                selected_label = sorted_preds[1].item()
+            else:
+                selected_label = primary_label
+
+            technique_name = technique_map.get(selected_label, f"Technique_{selected_label}")
+            technique_confidence = multi_probs[selected_label].item()
+
+        detected_fragments.append({
+            "fragment": frag,
+            "technique": technique_name,
+            "manipulation_confidence": round(manipulation_confidence * 100, 2),
+            "technique_confidence": round(technique_confidence * 100, 2)
+        })
+
+    return detected_fragments
+
 # =============================
 # Section 5: Example Usage
 # =============================
