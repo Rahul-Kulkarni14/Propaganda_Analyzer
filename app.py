@@ -38,6 +38,9 @@ HTML_TEMPLATE = '''
         .subtitle { text-align: center; color: #7f8c8d; margin-bottom: 20px; font-size: 18px; }
         textarea { width: 100%; height: 180px; padding: 14px; border: 2px solid #ddd; border-radius: 10px; font-size: 16px; resize: vertical; }
         button { padding: 14px 28px; margin: 12px 8px; font-size: 16px; border: none; border-radius: 10px; cursor: pointer; transition: 0.3s; }
+        select { padding: 12px; margin: 12px 8px; font-size: 16px; border: 2px solid #ddd; border-radius: 10px; }
+        .btn-mic { background: #8e44ad; color: white; }
+        .btn-mic:hover { background: #71368a; transform: translateY(-2px); }
         .btn-analyze { background: #e74c3c; color: white; }
         .btn-analyze:hover { background: #c0392b; transform: translateY(-2px); }
         .btn-perf { background: #27ae60; color: white; }
@@ -52,13 +55,78 @@ HTML_TEMPLATE = '''
     <div class="container">
         <h1>Propaganda & Manipulation Analyzer</h1>
         <p class="subtitle">Detect 15 propaganda techniques in real-time</p>
-        <textarea id="speech" placeholder="Paste any speech, article, or text here..."></textarea><br>
+       <textarea id="speech" placeholder="Paste any speech, article, or text here..."></textarea><br>
+
+<select id="speechLang">
+    <option value="en-US">English</option>
+    <option value="hi-IN">Hindi</option>
+    <option value="mr-IN">Marathi</option>
+    <option value="kn-IN">Kannada</option>
+    <option value="ta-IN">Tamil</option>
+    <option value="te-IN">Telugu</option>
+    <option value="bn-IN">Bengali</option>
+    <option value="gu-IN">Gujarati</option>
+    <option value="pa-IN">Punjabi</option>
+    <option value="ur-IN">Urdu</option>
+    <option value="fr-FR">French</option>
+    <option value="es-ES">Spanish</option>
+    <option value="de-DE">German</option>
+    <option value="it-IT">Italian</option>
+    <option value="pt-PT">Portuguese</option>
+    <option value="ja-JP">Japanese</option>
+    <option value="ko-KR">Korean</option>
+    <option value="zh-CN">Chinese</option>
+    <option value="ar-SA">Arabic</option>
+</select>
+
+<button class="btn-mic" onclick="startListening()">Start Speaking</button>
+
+
         <button class="btn-analyze" onclick="analyze()">Analyze Speech</button>
         <button class="btn-perf" onclick="showPerformance()">Model Performance</button>
         <div id="result">Results will appear here...</div>
     </div>
 
     <script>
+        function startListening() {
+    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+
+    if (!SpeechRecognition) {
+        document.getElementById('result').innerHTML =
+            '<i style="color:#e67e22">Speech recognition is not supported in this browser. Please use Chrome or Edge.</i>';
+        return;
+    }
+
+    const recognition = new SpeechRecognition();
+    recognition.lang = document.getElementById('speechLang').value;
+    recognition.interimResults = false;
+    recognition.maxAlternatives = 1;
+
+    document.getElementById('result').innerHTML =
+        '<span class="loading">Listening... speak now.</span>';
+
+    recognition.start();
+
+    recognition.onresult = function(event) {
+        const transcript = event.results[0][0].transcript;
+        const textarea = document.getElementById('speech');
+
+        if (textarea.value.trim()) {
+            textarea.value += ' ' + transcript;
+        } else {
+            textarea.value = transcript;
+        }
+
+        document.getElementById('result').innerHTML =
+            '<span class="loading">Speech converted to text. Click Analyze Speech.</span>';
+    };
+
+    recognition.onerror = function(event) {
+        document.getElementById('result').innerHTML =
+            '<i style="color:#e74c3c">Speech recognition error: ' + event.error + '</i>';
+    };
+}
+
         async function analyze() {
             const text = document.getElementById('speech').value.trim();
             if (!text) {
