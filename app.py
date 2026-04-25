@@ -39,6 +39,10 @@ HTML_TEMPLATE = '''
         textarea { width: 100%; height: 180px; padding: 14px; border: 2px solid #ddd; border-radius: 10px; font-size: 16px; resize: vertical; }
         button { padding: 14px 28px; margin: 12px 8px; font-size: 16px; border: none; border-radius: 10px; cursor: pointer; transition: 0.3s; }
         select { padding: 12px; margin: 12px 8px; font-size: 16px; border: 2px solid #ddd; border-radius: 10px; }
+        input[type="file"] { margin: 12px 8px; font-size: 15px; }
+.btn-upload { background: #2980b9; color: white; }
+.btn-upload:hover { background: #1f6391; transform: translateY(-2px); }
+
         .btn-mic { background: #8e44ad; color: white; }
         .btn-mic:hover { background: #71368a; transform: translateY(-2px); }
         .btn-analyze { background: #e74c3c; color: white; }
@@ -80,6 +84,8 @@ HTML_TEMPLATE = '''
 </select>
 
 <button class="btn-mic" onclick="startListening()">Start Speaking</button>
+<input type="file" id="documentFile" accept=".txt,.pdf">
+<button class="btn-upload" onclick="uploadDocument()">Upload Document</button>
 
 
         <button class="btn-analyze" onclick="analyze()">Analyze Speech</button>
@@ -126,6 +132,40 @@ HTML_TEMPLATE = '''
             '<i style="color:#e74c3c">Speech recognition error: ' + event.error + '</i>';
     };
 }
+async function uploadDocument() {
+    const fileInput = document.getElementById('documentFile');
+    const file = fileInput.files[0];
+
+    if (!file) {
+        document.getElementById('result').innerHTML =
+            '<i style="color:#e67e22">Please choose a .txt or .pdf file first.</i>';
+        return;
+    }
+
+    const formData = new FormData();
+    formData.append('document', file);
+
+    document.getElementById('result').innerHTML =
+        '<span class="loading">Extracting text from document...</span>';
+
+    const res = await fetch('/upload-document', {
+        method: 'POST',
+        body: formData
+    });
+
+    const data = await res.json();
+
+    if (!res.ok || data.error) {
+        document.getElementById('result').innerHTML =
+            '<i style="color:#e74c3c">' + data.error + '</i>';
+        return;
+    }
+
+    document.getElementById('speech').value = data.text;
+    document.getElementById('result').innerHTML =
+        '<span class="loading">Document text extracted. Click Analyze Speech.</span>';
+}
+
 
         async function analyze() {
             const text = document.getElementById('speech').value.trim();
@@ -205,6 +245,30 @@ def analyze_api():
 
     return jsonify({'output': final_output})
 
+@app.route('/upload-document', methods=['POST'])
+def upload_document_api():
+    if 'document' not in request.files:
+        return jsonify({
+            'text': '',
+            'error': 'No document uploaded.'
+        }), 400
+
+    document = request.files['document']
+
+    if not document.filename:
+        return jsonify({
+            'text': '',
+            'error': 'No selected file.'
+        }), 400
+
+    from file_utils import extract_text_from_document
+
+    extraction_result = extract_text_from_document(document)
+
+    if extraction_result["error"]:
+        return jsonify(extraction_result), 400
+
+    return jsonify(extraction_result)
 
 @app.route('/performance')
 def performance_api():
