@@ -101,18 +101,42 @@ def analyze_api():
     if not text:
         return jsonify({'output': 'Please enter some text.'})
 
+    from translation_utils import prepare_text_for_analysis
+
+    translation_result = prepare_text_for_analysis(text)
+    analysis_text = translation_result["translated_text"]
+
     speech_analyzer = lazy_import('speech_analyzer')
     
     import builtins
     real_input = builtins.input
-    builtins.input = lambda _: text
+    builtins.input = lambda _: analysis_text
 
     try:
-        output = capture_print_output(speech_analyzer.analyze_speech, text)
+        output = capture_print_output(speech_analyzer.analyze_speech, analysis_text)
     finally:
         builtins.input = real_input
 
-    return jsonify({'output': output or 'No propaganda detected.'})
+    translation_summary = (
+        f"Detected Language: {translation_result['detected_language_name']} "
+        f"({translation_result['detected_language']})\n"
+        f"Translated to English: {'Yes' if translation_result['was_translated'] else 'No'}\n"
+    )
+
+    if translation_result["error"]:
+        translation_summary += f"Translation Note: {translation_result['error']}\n"
+
+    if translation_result["was_translated"]:
+        translation_summary += f"\nTranslated Text:\n{analysis_text}\n"
+
+    final_output = (
+        translation_summary
+        + "\nAnalysis Result:\n"
+        + (output or "No propaganda detected.")
+    )
+
+    return jsonify({'output': final_output})
+
 
 @app.route('/performance')
 def performance_api():
