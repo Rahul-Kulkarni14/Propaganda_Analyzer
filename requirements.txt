@@ -9,3 +9,4 @@ Flask-CORS==4.0.1
 deep-translator
 langdetect
 pypdf
+gunicorn==22.0.0
