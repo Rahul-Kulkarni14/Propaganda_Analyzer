@@ -116,15 +116,15 @@ HTML_TEMPLATE = '''
         .control-panel {
             margin-top: 18px;
             display: grid;
-            grid-template-columns: repeat(3, minmax(0, 1fr));
-            gap: 18px;
+            grid-template-columns: repeat(4, minmax(0, 1fr));
+            gap: 14px;
         }
 
         .control-group {
             border: 1px solid #d6e1ea;
             background: #f3f7f9;
             border-radius: 10px;
-            padding: 16px;
+            padding: 14px;
         }
 
         .control-row {
@@ -145,15 +145,17 @@ HTML_TEMPLATE = '''
         }
 
         select {
-            min-width: 170px;
-            padding: 0 12px;
+            width: 100%;
+            min-width: 0;
+            padding: 0 10px;
         }
 
         input[type="file"] {
-            flex: 1;
-            min-width: 220px;
-            padding: 10px;
+        width: 100%;
+        min-width: 0;
+        padding: 10px;
         }
+
 
         .actions {
             margin-top: 22px;
@@ -179,6 +181,12 @@ HTML_TEMPLATE = '''
             transform: translateY(-1px);
             box-shadow: 0 8px 18px rgba(31, 41, 55, 0.14);
         }
+        .control-group button {
+            width: auto;
+            min-width: 130px;
+            padding: 0 14px;
+        }
+
 
         .btn-mic {
             background: #6f5aa7;
@@ -239,6 +247,15 @@ HTML_TEMPLATE = '''
 
         .btn-dataset:hover {
             background: #2c5078;
+        }
+
+        .btn-reddit {
+            background: #d85c27;
+            min-width: 170px;
+        }
+
+        .btn-reddit:hover {
+            background: #b94b1f;
         }
 
         .btn-clear {
@@ -507,6 +524,37 @@ HTML_TEMPLATE = '''
             font-weight: 800;
         }
 
+        .reddit-browser {
+            display: grid;
+            gap: 14px;
+        }
+
+        .reddit-post {
+            background: #ffffff;
+            border: 1px solid #d6e1ea;
+            border-radius: 10px;
+            padding: 15px;
+        }
+
+        .reddit-post h3 {
+            margin: 0 0 8px;
+            color: #2f4a55;
+            font-size: 16px;
+        }
+
+        .reddit-post p {
+            margin: 0 0 10px;
+            color: #374151;
+            line-height: 1.5;
+        }
+
+        .reddit-meta {
+            margin-bottom: 10px;
+            color: #687789;
+            font-size: 13px;
+            font-weight: 700;
+        }
+
         .guide-grid {
             display: grid;
             grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -618,6 +666,11 @@ HTML_TEMPLATE = '''
             white-space: pre-wrap;
             font-family: "Consolas", "Courier New", monospace;
         }
+        @media (max-width: 1050px) {
+            .control-panel {
+                grid-template-columns: repeat(2, minmax(0, 1fr));
+            }
+        }
 
         @media (max-width: 760px) {
             .page {
@@ -722,6 +775,25 @@ HTML_TEMPLATE = '''
                             <button class="btn-upload" onclick="loadCaseStudy()">Load Sample</button>
                         </div>
                     </div>
+
+                    <div class="control-group">
+                        <p class="section-title">Reddit Text Browser</p>
+                        <div class="control-row">
+                            <select id="redditSubreddit">
+                                <option value="speeches">r/speeches</option>
+                                <option value="PoliticalDiscussion">r/PoliticalDiscussion</option>
+                                <option value="changemyview">r/changemyview</option>
+                                <option value="quotes">r/quotes</option>
+                            </select>
+                            <select id="redditSort">
+                                <option value="hot">Hot</option>
+                                <option value="new">New</option>
+                                <option value="top">Top This Week</option>
+                                <option value="rising">Rising</option>
+                            </select>
+                            <button class="btn-reddit" onclick="showRedditBrowser()">Browse Reddit</button>
+                        </div>
+                    </div>
                 </div>
 
                 <div class="actions">
@@ -743,9 +815,9 @@ HTML_TEMPLATE = '''
             </div>
         </section>
     </main>
-
 <script>
     let latestAnalysis = null;
+    let latestRedditPosts = [];
 
     const caseStudies = {
         patriotic: `Millions of patriotic citizens are standing together to defend the nation, the flag, and our freedom.`,
@@ -1582,6 +1654,87 @@ HTML_TEMPLATE = '''
         `;
     }
 
+    async function showRedditBrowser() {
+        const subreddit = document.getElementById('redditSubreddit').value;
+        const sort = document.getElementById('redditSort').value;
+
+        document.getElementById('result').innerHTML =
+            '<span class="loading">Loading Reddit posts...</span>';
+
+        try {
+            const res = await fetch(
+                '/reddit-posts?subreddit=' + encodeURIComponent(subreddit) +
+                '&sort=' + encodeURIComponent(sort) +
+                '&limit=10'
+            );
+
+            const data = await res.json();
+
+            if (!res.ok || data.error) {
+                document.getElementById('result').innerHTML =
+                    '<i style="color:#b84a4a">' + escapeHtml(data.error || 'Could not load Reddit posts.') + '</i>';
+                return;
+            }
+
+            latestRedditPosts = data.posts || [];
+
+            if (latestRedditPosts.length === 0) {
+                document.getElementById('result').innerHTML =
+                    '<div class="empty-state">No readable Reddit text posts found. Try another subreddit or sort option.</div>';
+                return;
+            }
+
+            let html = `
+                <div class="translated-box">
+                    <strong>Reddit Text Browser</strong><br>
+                    Choose a public Reddit post to load into the analyzer. After selecting a post, click Analyze Speech.
+                </div>
+                <div class="reddit-browser">
+            `;
+
+            latestRedditPosts.forEach((post, index) => {
+                const preview = post.text || post.title;
+
+                html += `
+                    <div class="reddit-post">
+                        <h3>${escapeHtml(post.title)}</h3>
+                        <p>${escapeHtml(preview.slice(0, 320))}${preview.length > 320 ? '...' : ''}</p>
+                        <div class="reddit-meta">
+                            r/${escapeHtml(post.subreddit)} | u/${escapeHtml(post.author)} |
+                            Score: ${post.score} | Comments: ${post.comments}
+                        </div>
+                        <button class="btn-reddit" onclick="useRedditPost(${index})">Use This Text</button>
+                    </div>
+                `;
+            });
+
+            html += '</div>';
+            document.getElementById('result').innerHTML = html;
+
+        } catch (error) {
+            document.getElementById('result').innerHTML =
+                '<i style="color:#b84a4a">Could not connect to Reddit. You can still paste text manually or use case studies.</i>';
+        }
+    }
+
+    function useRedditPost(index) {
+        const post = latestRedditPosts[index];
+
+        if (!post) {
+            document.getElementById('result').innerHTML =
+                '<i style="color:#b84a4a">Selected Reddit post could not be loaded.</i>';
+            return;
+        }
+
+        const text = `${post.title}\n\n${post.text || ''}`.trim();
+
+        document.getElementById('speech').value = text;
+        latestAnalysis = null;
+
+        document.getElementById('result').innerHTML =
+            '<span class="loading">Reddit post loaded into input box. Click Analyze Speech to process it.</span>';
+    }
+
     function startListening() {
         const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
 
@@ -1620,7 +1773,6 @@ HTML_TEMPLATE = '''
                 '<i style="color:#b84a4a">Speech recognition error: ' + event.error + '</i>';
         };
     }
-
     async function uploadDocument() {
         const fileInput = document.getElementById('documentFile');
         const file = fileInput.files[0];
@@ -1788,6 +1940,7 @@ HTML_TEMPLATE = '''
         document.getElementById('documentFile').value = '';
         document.getElementById('caseStudySelect').value = '';
         latestAnalysis = null;
+        latestRedditPosts = [];
         document.getElementById('result').innerHTML =
             '<span class="placeholder">Results will appear here after analysis.</span>';
     }
@@ -1846,6 +1999,99 @@ def upload_document_api():
         return jsonify(extraction_result), 400
 
     return jsonify(extraction_result)
+
+@app.route('/reddit-posts')
+def reddit_posts_api():
+    import json
+    import urllib.parse
+    import urllib.request
+
+    allowed_subreddits = {
+        'speeches',
+        'PoliticalDiscussion',
+        'changemyview',
+        'quotes'
+    }
+
+    allowed_sorts = {
+        'hot',
+        'new',
+        'top',
+        'rising'
+    }
+
+    subreddit = request.args.get('subreddit', 'speeches')
+    sort = request.args.get('sort', 'hot')
+
+    try:
+        limit = int(request.args.get('limit', 10))
+    except ValueError:
+        limit = 10
+
+    limit = max(1, min(limit, 20))
+
+    if subreddit not in allowed_subreddits:
+        subreddit = 'speeches'
+
+    if sort not in allowed_sorts:
+        sort = 'hot'
+
+    query = {
+        'limit': limit,
+        'raw_json': 1
+    }
+
+    if sort == 'top':
+        query['t'] = 'week'
+
+    url = (
+        f'https://www.reddit.com/r/{subreddit}/{sort}.json?'
+        + urllib.parse.urlencode(query)
+    )
+
+    req = urllib.request.Request(
+        url,
+        headers={
+            'User-Agent': 'PropagandaAnalyzerCapstone/1.0'
+        }
+    )
+
+    try:
+        with urllib.request.urlopen(req, timeout=10) as response:
+            payload = json.loads(response.read().decode('utf-8'))
+
+        posts = []
+
+        for child in payload.get('data', {}).get('children', []):
+            post_data = child.get('data', {})
+
+            title = (post_data.get('title') or '').strip()
+            text = (post_data.get('selftext') or '').strip()
+
+            combined_text = f'{title} {text}'.strip()
+
+            if len(combined_text.split()) < 8:
+                continue
+
+            posts.append({
+                'title': title,
+                'text': text,
+                'author': post_data.get('author') or 'unknown',
+                'score': int(post_data.get('score') or 0),
+                'comments': int(post_data.get('num_comments') or 0),
+                'subreddit': post_data.get('subreddit') or subreddit,
+                'url': 'https://www.reddit.com' + (post_data.get('permalink') or '')
+            })
+
+        return jsonify({
+            'posts': posts
+        })
+
+    except Exception as exc:
+        return jsonify({
+            'error': f'Could not load Reddit posts: {str(exc)}',
+            'posts': []
+        }), 500
 
 @app.route('/performance')
 def performance_api():
